@@ -1,15 +1,14 @@
 package com.example.project_service_api.service;
 
 import com.example.project_service_api.dto.CustomerDto;
+import com.example.project_service_api.exception.CustomerNotFoundException;
 import com.example.project_service_api.mapper.impl.CustomerMapper;
 import com.example.project_service_api.persistence.entity.Customer;
 import com.example.project_service_api.persistence.repository.CustomerRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-
 
 @Service
 public class CustomerService {
@@ -17,9 +16,9 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
 
-    public CustomerService(CustomerRepository customerRepository, CustomerMapper customerMapper, CustomerMapper customerMapper1) {
+    public CustomerService(CustomerRepository customerRepository, CustomerMapper customerMapper) {
         this.customerRepository = customerRepository;
-        this.customerMapper = customerMapper1;
+        this.customerMapper = customerMapper;
     }
 
     public List<CustomerDto> getAllCustomers() {
@@ -29,8 +28,9 @@ public class CustomerService {
     }
 
     public CustomerDto getCustomerById(UUID id) {
-        Optional<Customer> customer = customerRepository.findById(id);
-        return customer.map(customerMapper::mapEntityToDto).orElse(null);
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with id: " + id));
+        return customerMapper.mapEntityToDto(customer);
     }
 
     public CustomerDto createCustomer(CustomerDto customerDto) {
@@ -40,22 +40,27 @@ public class CustomerService {
     }
 
     public CustomerDto updateCustomer(UUID id, CustomerDto customerDto) {
-        Optional<Customer> existingCustomer = customerRepository.findById(id);
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with id: " + id));
 
-        if (existingCustomer.isPresent()) {
-            Customer customer = existingCustomer.get();
+        if (customerDto.getName() != null) {
             customer.setName(customerDto.getName());
+        }
+        if (customerDto.getEmail() != null) {
             customer.setEmail(customerDto.getEmail());
+        }
+        if (customerDto.getPhone() != null) {
             customer.setPhone(customerDto.getPhone());
-
-            Customer updatedCustomer = customerRepository.save(customer);
-            return customerMapper.mapEntityToDto(updatedCustomer);
         }
 
-        return null;
+        Customer updatedCustomer = customerRepository.save(customer);
+        return customerMapper.mapEntityToDto(updatedCustomer);
     }
 
     public void deleteCustomer(UUID id) {
+        if (!customerRepository.existsById(id)) {
+            throw new CustomerNotFoundException("Customer not found with id: " + id);
+        }
         customerRepository.deleteById(id);
     }
 }

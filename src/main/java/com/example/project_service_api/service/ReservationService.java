@@ -1,7 +1,7 @@
 package com.example.project_service_api.service;
 
-
 import com.example.project_service_api.dto.ReservationDto;
+import com.example.project_service_api.exception.ReservationNotFoundException;
 import com.example.project_service_api.mapper.ObjectMapper;
 import com.example.project_service_api.persistence.entity.Reservation;
 import com.example.project_service_api.persistence.repository.ReservationRepository;
@@ -28,7 +28,8 @@ public class ReservationService {
     }
 
     public ReservationDto getReservationById(UUID id) {
-        Reservation reservation = reservationRepository.findById(id).orElse(null);
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new ReservationNotFoundException("Reservation not found with id: " + id));
         return reservationMapper.mapEntityToDto(reservation);
     }
 
@@ -38,10 +39,8 @@ public class ReservationService {
     }
 
     public void updateReservation(UUID id, ReservationDto reservationDto) {
-        Reservation existingReservation = reservationRepository.findById(id).orElse(null);
-        if (existingReservation == null) {
-            throw new RuntimeException("Reservation not found with id: " + id);
-        }
+        Reservation existingReservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new ReservationNotFoundException("Reservation not found with id: " + id));
 
         if (reservationDto.status() != null) {
             existingReservation.setStatus(reservationDto.status());
@@ -55,8 +54,9 @@ public class ReservationService {
     }
 
     public void deleteReservation(UUID id) {
-        Reservation reservation = reservationRepository.findById(id).orElse(null);
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new ReservationNotFoundException("Reservation not found with id: " + id));
+
         reservationRepository.delete(reservation);
     }
 }
-

@@ -1,7 +1,7 @@
 package com.example.project_service_api.service;
 
-
 import com.example.project_service_api.dto.PaymentDto;
+import com.example.project_service_api.exception.PaymentNotFoundException;
 import com.example.project_service_api.mapper.ObjectMapper;
 import com.example.project_service_api.persistence.entity.Payment;
 import com.example.project_service_api.persistence.repository.PaymentRepository;
@@ -28,7 +28,8 @@ public class PaymentService {
     }
 
     public PaymentDto getPaymentById(UUID id) {
-        Payment payment = paymentRepository.findById(id).orElse(null);
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found with id: " + id));
         return paymentMapper.mapEntityToDto(payment);
     }
 
@@ -38,10 +39,8 @@ public class PaymentService {
     }
 
     public void updatePayment(UUID id, PaymentDto paymentDto) {
-        Payment existingPayment = paymentRepository.findById(id).orElse(null);
-        if (existingPayment == null) {
-            throw new RuntimeException("Payment not found with id: " + id);
-        }
+        Payment existingPayment = paymentRepository.findById(id)
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found with id: " + id));
 
         if (paymentDto.getAmount() > 0) {
             existingPayment.setAmount(paymentDto.getAmount());
@@ -55,13 +54,9 @@ public class PaymentService {
     }
 
     public void deletePayment(UUID id) {
-        Payment payment = paymentRepository.findById(id).orElse(null);
-        if (payment == null) {
-            throw new RuntimeException("Payment not found with id: " + id);
-        }
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found with id: " + id));
+
         paymentRepository.delete(payment);
     }
-
 }
-
-
